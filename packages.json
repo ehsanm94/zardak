@@ -8,5 +8,6 @@
             "email": "ehsanm94@gmail.com"
         }
     ],
+    "minimum-stability": "dev",
     "require": {}
 }
