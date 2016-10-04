@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Zardak\\": "framework/src/"
+            "Zardak\\": "src"
         }
     }
 }
