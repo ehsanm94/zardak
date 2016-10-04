@@ -1,0 +1,12 @@
+{
+    "name": "ehsanm94/zardak",
+    "description": "A beautiful, simple and personal PHP MVC framework",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ehsan Mokhtari",
+            "email": "ehsanm94@gmail.com"
+        }
+    ],
+    "require": {},
+}
