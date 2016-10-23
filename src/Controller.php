@@ -34,4 +34,8 @@ class Controller
         }
         return ob_get_clean();
     }
+
+    public function getField($field) {
+        return isset($_POST[$field]) && !empty($_POST[$field]) ? $_POST[$field] : false;
+    }
 }
