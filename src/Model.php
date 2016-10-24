@@ -317,4 +317,15 @@ class Model
 		$this->query_parts['fetch_type'] = PDO::FETCH_GROUP;
 		return $this;
 	}
+
+	protected function raw_query($sql, $data) {
+		$query = DB::getInstance()->prepare($sql);
+		$query->execute($data);
+
+		$records = [];
+		while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+			$records[] = new Record($row);
+		}
+		return $records;
+	}
 }
