@@ -318,7 +318,7 @@ class Model
 		return $this;
 	}
 
-	protected function raw($sql, $data) {
+	protected static function raw($sql, $data) {
 		$query = DB::getInstance()->prepare($sql);
 		$query->execute($data);
 
