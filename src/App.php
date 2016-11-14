@@ -1,6 +1,9 @@
 <?php
 namespace Zardak;
+
+use \ReflectionMethod;
 use App\Controller\PageNotFound;
+
 class App
 {
     /** @var null The controller path */
@@ -27,45 +30,10 @@ class App
      */
     public function __construct()
     {
-        // create array with URL parts in $url
-        $this->findControllerPath(isset($_GET['url']) ? $_GET['url'] : null);
+        $url = isset($_GET['url']) ? $_GET['url'] : null;
+        $this->redirectToCorrectUrl($url);
+        $this->findControllerPath($url);
         $this->findActionAndParams();
-
-        // check for controller: does such a controller exist ?
-        $controller_path = 'app/Controller/' . ucwords(strtolower($this->url_controller_path), '/') . '.php';
-        if (file_exists($controller_path)) {
-
-            // if so, then load this file and create this controller
-            // example: if controller would be "car", then this line would translate into: $this->car = new car();
-            // require $controller;
-            $controller = '\\' . ucwords(str_replace('.php', '', str_replace('/', '\\', $controller_path)));
-            $this->url_controller_class = new $controller();
-
-            // check for method: does such a method exist in the controller ?
-            if (method_exists($this->url_controller_class, $this->url_action)) {
-
-                // call the method and pass the arguments to it
-                if (isset($this->url_parameter_3)) {
-                    // will translate to something like $this->home->method($param_1, $param_2, $param_3);
-                    $this->url_controller_class->{$this->url_action}($this->url_parameter_1, $this->url_parameter_2, $this->url_parameter_3);
-                } elseif (isset($this->url_parameter_2)) {
-                    // will translate to something like $this->home->method($param_1, $param_2);
-                    $this->url_controller_class->{$this->url_action}($this->url_parameter_1, $this->url_parameter_2);
-                } elseif (isset($this->url_parameter_1)) {
-                    // will translate to something like $this->home->method($param_1);
-                    $this->url_controller_class->{$this->url_action}($this->url_parameter_1);
-                } else {
-                    // if no parameters given, just call the method without parameters, like $this->home->method();
-                    $this->url_controller_class->{$this->url_action}();
-                }
-            } else {
-                $not_found_page = new PageNotFound();
-                $not_found_page->index();
-            }
-        } else {
-            $not_found_page = new PageNotFound();
-            $not_found_page->index();
-        }
     }
 
     /**
@@ -73,49 +41,93 @@ class App
      */
     private function findActionAndParams()
     {
-        if (isset($_GET['url'])) {
-            $url = filter_var($_GET['url'], FILTER_SANITIZE_URL);
-            $url = str_replace($this->url_controller_path, '', $url);
-            $is_slash = (strlen($url) == 1 && $url == '/') ? true : false;
+        $url = isset($_GET['url']) ? filter_var($_GET['url'], FILTER_SANITIZE_URL) : '';
+        $url = str_replace($this->url_controller_path, '', $url);
 
-            $url = trim($url, '/');
-            $url = explode('/', $url);
+        $url = trim($url, '/');
+        $url = explode('/', $url);
 
-            if (!$is_slash && !empty($url[0]))
-                $this->url_action = $url[0];
-            elseif ($is_slash)
-                $this->url_action = null;
-            elseif (empty($url[0]))
-                $this->url_action = 'index';
+        $controller_path = 'app/Controller/' . ucwords(strtolower($this->url_controller_path), '/') . '.php';
+        
+        if (file_exists($controller_path)) {
+            $controller = '\\' . ucwords(str_replace('.php', '', str_replace('/', '\\', $controller_path)));
+            $this->url_controller_class = new $controller();
 
-            $this->url_parameter_1 = (!empty($url[1]) ? $url[1] : null);
-            $this->url_parameter_2 = (!empty($url[2]) ? $url[2] : null);
-            $this->url_parameter_3 = (!empty($url[3]) ? $url[3] : null);
+            if (empty($url[0]))
+                unset($url);
+
+            $number_of_input_params     = 0;
+            $number_of_method_params    = 0;
+
+            if (isset($url) && method_exists($this->url_controller_class, $url[0])) {
+                $this->url_action       = $url[0];
+                $reflection             = new ReflectionMethod($this->url_controller_class, $this->url_action);
+                $number_of_method_params= count($reflection->getParameters());
+                $this->url_parameter_1  = (!empty($url[1]) ? $url[1] : null);
+                $this->url_parameter_2  = (!empty($url[2]) ? $url[2] : null);
+                $this->url_parameter_3  = (!empty($url[3]) ? $url[3] : null);
+                $number_of_input_params = count($url) - 1;
+            }
+            else if (method_exists($this->url_controller_class, 'index')) {
+                $this->url_action       = 'index';
+                $reflection             = new ReflectionMethod($this->url_controller_class, $this->url_action);
+                $number_of_method_params= count($reflection->getParameters());
+                $this->url_parameter_1  = (!empty($url[0]) ? $url[0] : null);
+                $this->url_parameter_2  = (!empty($url[1]) ? $url[1] : null);
+                $this->url_parameter_3  = (!empty($url[2]) ? $url[2] : null);
+                $number_of_input_params = isset($url) ? count($url) : 0;
+            }
+
+
+            if ($number_of_input_params > $number_of_method_params) {
+                $not_found_page = new PageNotFound();
+                $not_found_page->index();
+            }
+
+            // call the method and pass the arguments to it
+            if (isset($this->url_parameter_3)) {
+                // will translate to something like $this->home->method($param_1, $param_2, $param_3);
+                $this->url_controller_class->{$this->url_action}($this->url_parameter_1, $this->url_parameter_2, $this->url_parameter_3);
+            } elseif (isset($this->url_parameter_2)) {
+                // will translate to something like $this->home->method($param_1, $param_2);
+                $this->url_controller_class->{$this->url_action}($this->url_parameter_1, $this->url_parameter_2);
+            } elseif (isset($this->url_parameter_1)) {
+                // will translate to something like $this->home->method($param_1);
+                $this->url_controller_class->{$this->url_action}($this->url_parameter_1);
+            } else {
+                // if no parameters given, just call the method without parameters, like $this->home->method();
+                $this->url_controller_class->{$this->url_action}();
+            }
         }
     }
 
     private function findControllerPath($url)
     {
-        if (isset($url)) {
-            $url = rtrim($url, '/');
-            $url = filter_var($url, FILTER_SANITIZE_URL);
+        $url = rtrim($url, '/');
+        $url = filter_var($url, FILTER_SANITIZE_URL);
 
-            if (file_exists('app/Controller/' . ucwords(strtolower($url), '/') . '.php')) {
-                $this->url_controller_path = $url;
-                $this->url_controller_class = substr($url, strrpos($url, "/") === false ? 0 : strrpos($url, "/") + 1);
-                return;
-            }
-
-            if (strlen($url) > 0 && strpos($url, '/') !== false) {
-                $this->findControllerPath(substr($url, 0, strrpos($url, "/")));
-            }
-            else
-                return;
+        if (file_exists('app/Controller/' . ucwords(strtolower($url), '/') . '.php')) {
+            $this->url_controller_path = $url;
+            $this->url_controller_class = substr($url, strrpos($url, "/") === false ? 0 : strrpos($url, "/") + 1);
+            return;
         }
-        else{
-            $this->url_controller_path = 'home';
+
+        if (strlen($url) > 0 && strpos($url, '/') !== false) {
+            $this->findControllerPath(substr($url, 0, strrpos($url, "/")));
+        }
+        else {
+            $this->url_controller_path  = 'home';
             $this->url_controller_class = 'home';
-            $this->url_action = 'index';
+            return;
+        }
+    }
+
+    private function redirectToCorrectUrl($url) {
+        if ($url[strlen($url) - 1] == '/') {
+            $url = rtrim($url, '/');
+            header("HTTP/1.1 301 Moved Permanently");
+            header("Location: " . getenv('URL') . $url);
+            exit();
         }
     }
 }
