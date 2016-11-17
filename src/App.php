@@ -33,17 +33,15 @@ class App
         $url = isset($_GET['url']) ? $_GET['url'] : null;
         $this->redirectToCorrectUrl($url);
         $this->findControllerPath($url);
-        $this->findActionAndParams();
+        $this->findActionAndParams($url);
     }
 
     /**
      * Get and split the URL
      */
-    private function findActionAndParams()
+    private function findActionAndParams($url)
     {
-        $url = isset($_GET['url']) ? filter_var($_GET['url'], FILTER_SANITIZE_URL) : '';
         $url = str_replace($this->url_controller_path, '', $url);
-
         $url = trim($url, '/');
         $url = explode('/', $url);
 
@@ -78,12 +76,10 @@ class App
                 $number_of_input_params = isset($url) ? count($url) : 0;
             }
 
-
             if ($number_of_input_params > $number_of_method_params) {
                 $not_found_page = new PageNotFound();
                 $not_found_page->index();
             }
-
             // call the method and pass the arguments to it
             if (isset($this->url_parameter_3)) {
                 // will translate to something like $this->home->method($param_1, $param_2, $param_3);
