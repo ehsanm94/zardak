@@ -101,8 +101,9 @@ class Model
 		if (
 			count($this->query_parts['and_where_clauses']['prepared_stmts']) 	== 0 &&
 			count($this->query_parts['or_where_clauses']['prepared_stmts']) 	== 0 &&
-			count($this->query_parts['and_or_set']['prepared_stmts']) 		== 0 &&
-			count($this->query_parts['or_and_set']['prepared_stmts']) 		== 0
+			count($this->query_parts['and_or_set']['prepared_stmts']) 			== 0 &&
+			count($this->query_parts['or_and_set']['prepared_stmts']) 			== 0 &&
+			count($this->query_parts['and_constraint']) 						== 0
 		) {
 			$sql = 'SELECT ' . $what . ' FROM ' . $this->query_parts['table_name'];
 		}
@@ -177,11 +178,11 @@ class Model
 				return false;
 		}
 
-		$records = [];
+		$records = array();
 		if (!empty($this->query_parts['fetch_type'])) {
 			$results = $query->fetchAll($this->query_parts['fetch_type']);
 			foreach ($results as $result) {
-				$r = [];
+				$r = array();
 				foreach ($result as $res) {
 					$r[] = new Record((array)$res);
 				}
@@ -322,10 +323,20 @@ class Model
 		$query = DB::getInstance()->prepare($sql);
 		$query->execute($data);
 
-		$records = [];
+		$records = array();
 		while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
 			$records[] = new Record($row);
 		}
 		return $records;
+	}
+
+	protected function limit($limit) {
+		$this->query_parts['query_filters'][] = 'LIMIT ' . $limit;
+		return $this;
+	}
+
+	protected function offset($offset) {
+		$this->query_parts['query_filters'][] = 'OFFSET ' . $offset;
+		return $this;
 	}
 }
