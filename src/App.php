@@ -45,7 +45,7 @@ class App
         $url = trim($url, '/');
         $url = explode('/', $url);
 
-        $controller_path = 'app/Controller/' . ucwords(strtolower($this->url_controller_path), '/') . '.php';
+        $controller_path = 'app/Controller/' . ucwords(strtolower($this->url_controller_path)) . '.php';
         
         if (file_exists($controller_path)) {
             $controller = '\\' . ucwords(str_replace('.php', '', str_replace('/', '\\', $controller_path)));
@@ -102,7 +102,7 @@ class App
         $url = rtrim($url, '/');
         $url = filter_var($url, FILTER_SANITIZE_URL);
 
-        if (file_exists('app/Controller/' . ucwords(strtolower($url), '/') . '.php')) {
+        if (file_exists('app/Controller/' . ucwords(strtolower($url)) . '.php')) {
             $this->url_controller_path = $url;
             $this->url_controller_class = substr($url, strrpos($url, "/") === false ? 0 : strrpos($url, "/") + 1);
             return;
