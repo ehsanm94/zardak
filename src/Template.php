@@ -33,10 +33,12 @@ class Template {
 		} 
 		foreach ($this->views_chain as $view => $data) {
 			if (is_array($data)) {
-	            			foreach ($data as $key => $val) {
-	            				$this->$key = $val; 
-	            			}
-	            			extract($this->vars); 
+				foreach ($data as $key => $val) {
+					$this->$key = $val;
+				}
+			}
+			if (count($this->vars) > 0) {
+				extract($this->vars);
 			}
 			ob_start();
 			$path = str_replace('.', '/', $view);
